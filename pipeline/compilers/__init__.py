@@ -31,8 +31,8 @@ class Compiler(object):
                     output_path = self.output_path(input_path, compiler.output_extension)
                     paths[index] = output_path
                     try:
-                        infile = finders.find(input_path)
-                        outfile = finders.find(output_path)
+                        infile = self.storage.path(input_path)
+                        outfile = self.storage.path(output_path)
                         if outfile is None:
                             outfile = self.output_path(infile, compiler.output_extension)
                             outdated = True
