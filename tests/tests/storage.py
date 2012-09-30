@@ -1,8 +1,15 @@
+import StringIO
+
 from django.test import TestCase
 from django.utils.datastructures import SortedDict
 
 from pipeline.conf import settings
 from pipeline.storage import PipelineStorage
+
+
+class DummyPipelineStorage(PipelineStorage):
+    def _open(self, path, mode):
+        return StringIO.StringIO()
 
 
 class StorageTest(TestCase):
@@ -19,7 +26,7 @@ class StorageTest(TestCase):
         }
         settings.PIPELINE_JS_COMPRESSOR = None
         settings.PIPELINE_CSS_COMPRESSOR = None
-        self.storage = PipelineStorage()
+        self.storage = DummyPipelineStorage()
 
     def test_post_process_dry_run(self):
         processed_files = self.storage.post_process([], True)
