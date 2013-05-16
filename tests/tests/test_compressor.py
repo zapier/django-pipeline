@@ -125,8 +125,7 @@ class CompressorTest(TestCase):
     def test_compress_js_with_source_map_on_non_compatible_compressor(self, mock_constructor):
         mock_js_compressor = MagicMock()
         mock_constructor.return_value = mock_js_compressor
-        mock_js_compressor.compress_js_with_source_map.return_value = 'asdf'
-        mock_js_compressor.can_make_source_map = False
+        del mock_js_compressor.compress_js_with_source_map
 
         with self.assertRaisesRegexp(CompressorError, 'cannot make source maps'):
             self.compressor.compress_js([], with_source_map=True)

@@ -7,8 +7,6 @@ from pipeline.compressors import SubProcessCompressor
 
 
 class UglifyJSCompressor(SubProcessCompressor):
-    can_make_source_map = True
-
     def compress_js(self, js):
         command = '%s %s' % (settings.PIPELINE_UGLIFYJS_BINARY, settings.PIPELINE_UGLIFYJS_ARGUMENTS)
         if self.verbose:
