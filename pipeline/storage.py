@@ -23,16 +23,24 @@ class PipelineMixin(object):
         packager = Packager(storage=self)
         for package_name in packager.packages['css']:
             package = packager.package_for('css', package_name)
-            output_file = package.output_filename
             if self.packing:
-                packager.pack_stylesheets(package)
-            paths[output_file] = (self, output_file)
+                paths_written = packager.pack_stylesheets(package)
+                for path in paths_written:
+                    paths[path] = (self, path)
+            else:
+                # TODO: bcooksey 5/15/13. Not sure why we pretend we packed if packing is false...will this mess up source maps
+                output_file = package.output_filename
+                paths[output_file] = (self, output_file)
         for package_name in packager.packages['js']:
             package = packager.package_for('js', package_name)
-            output_file = package.output_filename
             if self.packing:
-                packager.pack_javascripts(package)
-            paths[output_file] = (self, output_file)
+                paths_written = packager.pack_javascripts(package)
+                for path in paths_written:
+                    paths[path] = (self, path)
+            else:
+                # TODO: bcooksey 5/15/13. Not sure why we pretend we packed if packing is false...will this mess up source maps
+                output_file = package.output_filename
+                paths[output_file] = (self, output_file)
 
         super_class = super(PipelineMixin, self)
         if hasattr(super_class, 'post_process'):

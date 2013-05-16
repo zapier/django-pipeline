@@ -59,6 +59,10 @@ class Package(object):
     def manifest(self):
         return self.config.get('manifest', True)
 
+    @property
+    def source_map_filename(self):
+        return self.config.get('source_map_filename')
+
 
 class Packager(object):
     def __init__(self, storage=default_storage, verbose=False, css_packages=None, js_packages=None):
@@ -101,10 +105,18 @@ class Packager(object):
         if self.verbose:
             print("Saving: %s" % output_filename)
         paths = self.compile(package.paths, force=True)
-        content = compress(paths, **kwargs)
-        self.save_file(output_filename, content)
+        paths_written = [output_filename]
+        if package.source_map_filename:
+            (output_content, source_map_content) = compress(paths, with_source_map=True, **kwargs)
+            self.save_file(output_filename, output_content)
+            self.save_file(package.source_map_filename, source_map_content)
+            paths_written.append(package.source_map_filename)
+        else:
+            content = compress(paths, **kwargs)[0]
+            self.save_file(output_filename, content)
+
         signal.send(sender=self, package=package, **kwargs)
-        return output_filename
+        return paths_written
 
     def pack_javascripts(self, package, **kwargs):
         return self.pack(package, self.compressor.compress_js, js_compressed, templates=package.templates, **kwargs)

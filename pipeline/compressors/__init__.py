@@ -51,7 +51,7 @@ class Compressor(object):
     def css_compressor(self):
         return to_class(settings.PIPELINE_CSS_COMPRESSOR)
 
-    def compress_js(self, paths, templates=None, **kwargs):
+    def compress_js(self, paths, templates=None, with_source_map=False, **kwargs):
         """Concatenate and compress JS files"""
         compressor_class = self.js_compressor
 
@@ -60,12 +60,16 @@ class Compressor(object):
         else:
             compressor = None
 
-        if compressor and hasattr(compressor, 'is_source_map_compressor') and compressor.is_source_map_compressor:
+        if compressor and with_source_map:
+            if not hasattr(compressor, 'can_make_source_map') or not compressor.can_make_source_map:
+                raise CompressorError("Compressor \"%s\" cannot make source maps, but a source map was requested. Please update PIPELINE_JS_COMPRESSOR a compatible compressor." % compressor_class)
+
             # TODO: bcooksey 5/15/13. No idea how we would support templates in this
             # process if we ever decide we want to use them
-            js = compressor.compress_js(paths)
+            (js, source_map) = compressor.compress_js_with_source_map(paths)
         else:
             js = self.concatenate(paths)
+            source_map = ''
 
             if templates:
                 js = js + self.compile_templates(templates)
@@ -76,7 +80,7 @@ class Compressor(object):
             if compressor:
                 js = compressor.compress_js(js)
 
-        return js
+        return [js, source_map]
 
     def compress_css(self, paths, output_filename, variant=None, **kwargs):
         """Concatenate and compress CSS files"""
@@ -85,9 +89,9 @@ class Compressor(object):
         if compressor:
             css = getattr(compressor(verbose=self.verbose), 'compress_css')(css)
         if not variant:
-            return css
+            return [css, '']
         elif variant == "datauri":
-            return self.with_data_uri(css)
+            return [self.with_data_uri(css), '']
         else:
             raise CompressorError("\"%s\" is not a valid variant" % variant)
 

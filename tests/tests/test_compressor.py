@@ -12,10 +12,9 @@ from django.test import TestCase
 
 from pipeline.compressors import Compressor, TEMPLATE_FUNC
 from pipeline.compressors.yuglify import YuglifyCompressor
-from pipeline.compressors.uglifyjs import UglifyJSCompressorWithSourceMaps
+from pipeline.exceptions import CompressorError
 
 from tests.utils import _
-
 
 class CompressorTest(TestCase):
     def setUp(self):
@@ -105,18 +104,32 @@ class CompressorTest(TestCase):
         with patch.object(self.compressor.js_compressor, 'compress_js') as mock_method:
             paths = []
             mock_method.return_value = 'asdf'
-            self.assertEqual(self.compressor.compress_js(paths), 'asdf')
+            (js, source_map) = self.compressor.compress_js(paths)
+            self.assertEqual(js, 'asdf')
+            self.assertEqual(source_map, '')
             mock_method.assert_called_with(u'(function() {  }).call(this);')
 
     @patch('pipeline.compressors.yuglify.YuglifyCompressor')
-    def test_compress_js_with_compressor_with_source_maps(self, mock_constructor):
+    def test_compress_js_with_source_map(self, mock_constructor):
         mock_js_compressor = MagicMock()
         mock_constructor.return_value = mock_js_compressor
-        mock_js_compressor.compress_js.return_value = 'asdf'
+        mock_js_compressor.compress_js_with_source_map.return_value = ['code', 'map']
 
         paths = ['my_code.js', 'his_code.js']
-        self.assertEqual(self.compressor.compress_js(paths), 'asdf')
-        mock_js_compressor.compress_js.assert_called_with(paths)
+        (js, source_map) = self.compressor.compress_js(paths, with_source_map=True)
+        self.assertEqual(js, 'code')
+        self.assertEqual(source_map, 'map')
+        mock_js_compressor.compress_js_with_source_map.assert_called_with(paths)
+
+    @patch('pipeline.compressors.yuglify.YuglifyCompressor')
+    def test_compress_js_with_source_map_on_non_compatible_compressor(self, mock_constructor):
+        mock_js_compressor = MagicMock()
+        mock_constructor.return_value = mock_js_compressor
+        mock_js_compressor.compress_js_with_source_map.return_value = 'asdf'
+        mock_js_compressor.can_make_source_map = False
+
+        with self.assertRaisesRegexp(CompressorError, 'cannot make source maps'):
+            self.compressor.compress_js([], with_source_map=True)
 
     def test_url_rewrite(self):
         output = self.compressor.concatenate_and_rewrite([
