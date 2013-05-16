@@ -1,10 +1,9 @@
-import os
-
 from __future__ import unicode_literals
+
+import os
 
 from pipeline.conf import settings
 from pipeline.compressors import SubProcessCompressor
-
 
 class UglifyJSCompressor(SubProcessCompressor):
     def compress_js(self, js):
@@ -15,7 +14,7 @@ class UglifyJSCompressor(SubProcessCompressor):
 
     def compress_js_with_source_map(self, paths):
         source_map_path = 'temp.map.out'
-        command = '%s --source-map %s %s' % (settings.PIPELINE_UGLIFYJS_BINARY, source_map_path, settings.PIPELINE_UGLIFYJS_ARGUMENTS)
+        command = '%s %s --source-map %s %s' % (settings.PIPELINE_UGLIFYJS_BINARY, ' '.join(paths), source_map_path, settings.PIPELINE_UGLIFYJS_ARGUMENTS)
         if self.verbose:
             command += ' --verbose'
         js = self.execute_command(command, paths)

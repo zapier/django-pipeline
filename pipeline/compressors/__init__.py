@@ -66,7 +66,10 @@ class Compressor(object):
 
             # TODO: bcooksey 5/15/13. No idea how we would support templates in this
             # process if we ever decide we want to use them
-            (js, source_map) = compressor.compress_js_with_source_map(paths)
+            full_paths = []
+            for path in paths:
+                full_paths.append(self.storage.path(path))
+            (js, source_map) = compressor.compress_js_with_source_map(full_paths)
         else:
             js = self.concatenate(paths)
             source_map = ''

@@ -12,6 +12,7 @@ from django.test import TestCase
 
 from pipeline.compressors import Compressor, TEMPLATE_FUNC
 from pipeline.compressors.yuglify import YuglifyCompressor
+from pipeline.compressors.uglifyjs import UglifyJSCompressor
 from pipeline.exceptions import CompressorError
 
 from tests.utils import _
@@ -115,11 +116,31 @@ class CompressorTest(TestCase):
         mock_constructor.return_value = mock_js_compressor
         mock_js_compressor.compress_js_with_source_map.return_value = ['code', 'map']
 
-        paths = ['my_code.js', 'his_code.js']
+        paths = [
+            _('pipeline/js/first.js'),
+            _('pipeline/js/second.js')
+        ]
         (js, source_map) = self.compressor.compress_js(paths, with_source_map=True)
         self.assertEqual(js, 'code')
         self.assertEqual(source_map, 'map')
-        mock_js_compressor.compress_js_with_source_map.assert_called_with(paths)
+        call = mock_js_compressor.compress_js_with_source_map.call_args_list[0]
+        actual_path_arg = call[0][0]
+        self.assertRegexpMatches(actual_path_arg[0], 'first.js')
+        self.assertRegexpMatches(actual_path_arg[1], 'second.js')
+
+    # Uncomment if you need a fully working version
+    # @patch('pipeline.compressors.yuglify.YuglifyCompressor')
+    # def test_compress_js_with_source_map_real(self, mock_constructor):
+    #     mock_constructor.return_value = UglifyJSCompressor(False)
+
+    #     paths = [
+    #         _('pipeline/js/first.js'),
+    #         _('pipeline/js/second.js')
+    #     ]
+    #     (js, source_map) = self.compressor.compress_js(paths, with_source_map=True)
+    #     self.assertRegexpMatches(js, 'function concat.*function cat')
+    #     self.assertRegexpMatches(js, '@ sourceMappingURL') # Bunch of newlines..easier to do 2 asserts
+    #     self.assertTrue(len(source_map) > 0)
 
     @patch('pipeline.compressors.yuglify.YuglifyCompressor')
     def test_compress_js_with_source_map_on_non_compatible_compressor(self, mock_constructor):
