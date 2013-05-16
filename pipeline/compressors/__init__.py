@@ -53,16 +53,28 @@ class Compressor(object):
 
     def compress_js(self, paths, templates=None, **kwargs):
         """Concatenate and compress JS files"""
-        js = self.concatenate(paths)
-        if templates:
-            js = js + self.compile_templates(templates)
+        compressor_class = self.js_compressor
 
-        if not settings.PIPELINE_DISABLE_WRAPPER:
-            js = "(function() { %s }).call(this);" % js
+        if compressor_class:
+            compressor = compressor_class(verbose=self.verbose)
+        else:
+            compressor = None
 
-        compressor = self.js_compressor
-        if compressor:
-            js = getattr(compressor(verbose=self.verbose), 'compress_js')(js)
+        if compressor and hasattr(compressor, 'is_source_map_compressor') and compressor.is_source_map_compressor:
+            # TODO: bcooksey 5/15/13. No idea how we would support templates in this
+            # process if we ever decide we want to use them
+            js = compressor.compress_js(paths)
+        else:
+            js = self.concatenate(paths)
+
+            if templates:
+                js = js + self.compile_templates(templates)
+
+            if not settings.PIPELINE_DISABLE_WRAPPER:
+                js = "(function() { %s }).call(this);" % js
+
+            if compressor:
+                js = compressor.compress_js(js)
 
         return js
 

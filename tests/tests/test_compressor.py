@@ -4,14 +4,15 @@ from __future__ import unicode_literals
 import base64
 
 try:
-    from mock import patch
+    from mock import patch, MagicMock
 except ImportError:
-    from unittest.mock import patch  # noqa
+    from unittest.mock import patch, MagicMock  # noqa
 
 from django.test import TestCase
 
 from pipeline.compressors import Compressor, TEMPLATE_FUNC
 from pipeline.compressors.yuglify import YuglifyCompressor
+from pipeline.compressors.uglifyjs import UglifyJSCompressorWithSourceMaps
 
 from tests.utils import _
 
@@ -99,6 +100,23 @@ class CompressorTest(TestCase):
         asset_path = self.compressor.construct_asset_path("/images/sprite.png",
             "css/plugins/gallery.css", "css/gallery.css")
         self.assertEqual(asset_path, "/images/sprite.png")
+
+    def test_compress_js(self):
+        with patch.object(self.compressor.js_compressor, 'compress_js') as mock_method:
+            paths = []
+            mock_method.return_value = 'asdf'
+            self.assertEqual(self.compressor.compress_js(paths), 'asdf')
+            mock_method.assert_called_with(u'(function() {  }).call(this);')
+
+    @patch('pipeline.compressors.yuglify.YuglifyCompressor')
+    def test_compress_js_with_compressor_with_source_maps(self, mock_constructor):
+        mock_js_compressor = MagicMock()
+        mock_constructor.return_value = mock_js_compressor
+        mock_js_compressor.compress_js.return_value = 'asdf'
+
+        paths = ['my_code.js', 'his_code.js']
+        self.assertEqual(self.compressor.compress_js(paths), 'asdf')
+        mock_js_compressor.compress_js.assert_called_with(paths)
 
     def test_url_rewrite(self):
         output = self.compressor.concatenate_and_rewrite([
