@@ -151,6 +151,14 @@ class CompressorTest(TestCase):
         with self.assertRaisesRegexp(CompressorError, 'cannot make source maps'):
             self.compressor.compress_js([], with_source_map=True)
 
+    @patch('pipeline.compressors.yuglify.YuglifyCompressor')
+    def test_compress_js_with_source_map_and_templates(self, mock_constructor):
+        mock_js_compressor = MagicMock()
+        mock_constructor.return_value = mock_js_compressor
+
+        with self.assertRaisesRegexp(CompressorError, 'Templates cannot be part of a group'):
+            self.compressor.compress_js([], with_source_map=True, templates=['foo.jst'])
+
     def test_url_rewrite(self):
         output = self.compressor.concatenate_and_rewrite([
             _('pipeline/css/urls.css'),

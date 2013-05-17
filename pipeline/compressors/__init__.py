@@ -62,10 +62,11 @@ class Compressor(object):
 
         if compressor and with_source_map:
             if not hasattr(compressor, 'compress_js_with_source_map'):
-                raise CompressorError("Compressor \"%s\" cannot make source maps, but a source map was requested. Please update PIPELINE_JS_COMPRESSOR a compatible compressor." % compressor_class)
+                raise CompressorError("Compressor \"%s\" cannot make source maps, but a source map was requested. Please update PIPELINE_JS_COMPRESSOR to a compatible compressor." % compressor_class)
 
-            # TODO: bcooksey 5/15/13. No idea how we would support templates in this
-            # process if we ever decide we want to use them
+            if templates:
+                raise CompressorError('Templates cannot be part of a group that has source_map_filename specified. Move templates to a separate group in PIPELINE_JS.')
+
             full_paths = []
             for path in paths:
                 full_paths.append(self.storage.path(path))
