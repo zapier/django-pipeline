@@ -51,7 +51,7 @@ class Compressor(object):
     def css_compressor(self):
         return to_class(settings.PIPELINE_CSS_COMPRESSOR)
 
-    def compress_js(self, paths, templates=None, with_source_map=False, **kwargs):
+    def compress_js(self, paths, templates=None, source_map_filename=None, **kwargs):
         """Concatenate and compress JS files"""
         compressor_class = self.js_compressor
 
@@ -60,7 +60,7 @@ class Compressor(object):
         else:
             compressor = None
 
-        if compressor and with_source_map:
+        if compressor and source_map_filename:
             if not hasattr(compressor, 'compress_js_with_source_map'):
                 raise CompressorError("Compressor \"%s\" cannot make source maps, but a source map was requested. Please update PIPELINE_JS_COMPRESSOR to a compatible compressor." % compressor_class)
 
@@ -70,7 +70,7 @@ class Compressor(object):
             full_paths = []
             for path in paths:
                 full_paths.append(self.storage.path(path))
-            (js, source_map) = compressor.compress_js_with_source_map(full_paths)
+            (js, source_map) = compressor.compress_js_with_source_map(full_paths, source_map_filename)
         else:
             js = self.concatenate(paths)
             source_map = ''

@@ -120,15 +120,17 @@ class CompressorTest(TestCase):
             _('pipeline/js/first.js'),
             _('pipeline/js/second.js')
         ]
-        (js, source_map) = self.compressor.compress_js(paths, with_source_map=True)
+        (js, source_map) = self.compressor.compress_js(paths, source_map_filename='map.js')
         self.assertEqual(js, 'code')
         self.assertEqual(source_map, 'map')
         call = mock_js_compressor.compress_js_with_source_map.call_args_list[0]
         actual_path_arg = call[0][0]
         self.assertRegexpMatches(actual_path_arg[0], 'first.js')
         self.assertRegexpMatches(actual_path_arg[1], 'second.js')
+        self.assertEquals(call[0][1], 'map.js')
 
     # Uncomment if you need a fully working version
+    # May also need to tweak pipeline/conf/settings.py to point to real uglify binary
     # @patch('pipeline.compressors.yuglify.YuglifyCompressor')
     # def test_compress_js_with_source_map_real(self, mock_constructor):
     #     mock_constructor.return_value = UglifyJSCompressor(False)
@@ -137,9 +139,9 @@ class CompressorTest(TestCase):
     #         _('pipeline/js/first.js'),
     #         _('pipeline/js/second.js')
     #     ]
-    #     (js, source_map) = self.compressor.compress_js(paths, with_source_map=True)
+    #     (js, source_map) = self.compressor.compress_js(paths, source_map_filename='wakawaka.js')
     #     self.assertRegexpMatches(js, 'function concat.*function cat')
-    #     self.assertRegexpMatches(js, '@ sourceMappingURL') # Bunch of newlines..easier to do 2 asserts
+    #     self.assertRegexpMatches(js, '@ sourceMappingURL=wakawaka.js') # Bunch of newlines..easier to do 2 asserts
     #     self.assertTrue(len(source_map) > 0)
 
     @patch('pipeline.compressors.yuglify.YuglifyCompressor')
@@ -149,7 +151,7 @@ class CompressorTest(TestCase):
         del mock_js_compressor.compress_js_with_source_map
 
         with self.assertRaisesRegexp(CompressorError, 'cannot make source maps'):
-            self.compressor.compress_js([], with_source_map=True)
+            self.compressor.compress_js([], source_map_filename='map.js')
 
     @patch('pipeline.compressors.yuglify.YuglifyCompressor')
     def test_compress_js_with_source_map_and_templates(self, mock_constructor):
@@ -157,7 +159,7 @@ class CompressorTest(TestCase):
         mock_constructor.return_value = mock_js_compressor
 
         with self.assertRaisesRegexp(CompressorError, 'Templates cannot be part of a group'):
-            self.compressor.compress_js([], with_source_map=True, templates=['foo.jst'])
+            self.compressor.compress_js([], source_map_filename='map.js', templates=['foo.jst'])
 
     def test_url_rewrite(self):
         output = self.compressor.concatenate_and_rewrite([

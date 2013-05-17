@@ -107,7 +107,7 @@ class Packager(object):
         paths = self.compile(package.paths, force=True)
         paths_written = [output_filename]
         if package.source_map_filename:
-            (output_content, source_map_content) = compress(paths, with_source_map=True, **kwargs)
+            (output_content, source_map_content) = compress(paths, source_map_filename=package.source_map_filename, **kwargs)
             self.save_file(output_filename, output_content)
             self.save_file(package.source_map_filename, source_map_content)
             paths_written.append(package.source_map_filename)
