@@ -124,10 +124,11 @@ class CompressorTest(TestCase):
         self.assertEqual(js, 'code')
         self.assertEqual(source_map, 'map')
         call = mock_js_compressor.compress_js_with_source_map.call_args_list[0]
-        actual_path_arg = call[0][0]
-        self.assertRegexpMatches(actual_path_arg[0], 'first.js')
-        self.assertRegexpMatches(actual_path_arg[1], 'second.js')
-        self.assertEquals(call[0][1], 'map.js')
+        call_args = call[0]
+        self.assertRegexpMatches(call_args[0][0], 'first.js')
+        self.assertRegexpMatches(call_args[0][1], 'second.js')
+        self.assertEquals(call_args[1], 'map.js')
+        self.assertEquals(call_args[2], '/static/')
 
     # Uncomment if you need a fully working version
     # May also need to tweak pipeline/conf/settings.py to point to real uglify binary
@@ -141,7 +142,7 @@ class CompressorTest(TestCase):
     #     ]
     #     (js, source_map) = self.compressor.compress_js(paths, source_map_filename='wakawaka.js')
     #     self.assertRegexpMatches(js, 'function concat.*function cat')
-    #     self.assertRegexpMatches(js, '@ sourceMappingURL=wakawaka.js') # Bunch of newlines..easier to do 2 asserts
+    #     self.assertRegexpMatches(js, '@ sourceMappingURL=/static/wakawaka.js') # Bunch of newlines..easier to do 2 asserts
     #     self.assertTrue(len(source_map) > 0)
 
     @patch('pipeline.compressors.yuglify.YuglifyCompressor')

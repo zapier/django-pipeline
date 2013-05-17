@@ -68,9 +68,10 @@ class Compressor(object):
                 raise CompressorError('Templates cannot be part of a group that has source_map_filename specified. Move templates to a separate group in PIPELINE_JS.')
 
             full_paths = []
+            # path_prefix = os.path.relpath(settings.PIPELINE_ROOT) + '/'
             for path in paths:
-                full_paths.append(self.storage.path(path))
-            (js, source_map) = compressor.compress_js_with_source_map(full_paths, source_map_filename)
+                full_paths.append( os.path.relpath(self.storage.path(path)) )
+            (js, source_map) = compressor.compress_js_with_source_map(full_paths, source_map_filename, settings.PIPELINE_URL)
         else:
             js = self.concatenate(paths)
             source_map = ''
