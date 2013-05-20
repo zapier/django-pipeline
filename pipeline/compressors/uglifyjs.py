@@ -12,9 +12,20 @@ class UglifyJSCompressor(SubProcessCompressor):
             command += ' --verbose'
         return self.execute_command(command, js)
 
-    def compress_js_with_source_map(self, paths, source_map_filename, root_url):
+    def compress_js_with_source_map(self, paths, source_map_filename, root_url, path_prefix):
+        # Compute number of directory levels to drop from relative paths in source map
+        path_prefix = os.path.normpath(path_prefix)
+        dir_levels = path_prefix.count('/', 1) + 1
+
         tmp_source_map = 'test.map'
-        command = '%s %s --source-map %s --source-map-url %s -p 1 --source-map-root %s' % (settings.PIPELINE_UGLIFYJS_BINARY, ' '.join(paths), tmp_source_map, root_url + source_map_filename, root_url)
+        command = '%s %s --source-map %s --source-map-url %s -p %d --source-map-root %s' % (
+            settings.PIPELINE_UGLIFYJS_BINARY,
+            ' '.join(paths),
+            tmp_source_map,
+            root_url + source_map_filename,
+            dir_levels,
+            root_url
+        )
         if self.verbose:
             command += ' --verbose'
 

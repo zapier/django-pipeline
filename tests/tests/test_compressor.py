@@ -129,6 +129,7 @@ class CompressorTest(TestCase):
         self.assertRegexpMatches(call_args[0][1], 'second.js')
         self.assertEquals(call_args[1], 'map.js')
         self.assertEquals(call_args[2], '/static/')
+        self.assertEquals(call_args[3], 'tests/static/')
 
     # Uncomment if you need a fully working version
     # May also need to tweak pipeline/conf/settings.py to point to real uglify binary
