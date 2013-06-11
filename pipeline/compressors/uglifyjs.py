@@ -17,12 +17,17 @@ class UglifyJSCompressor(SubProcessCompressor):
         path_prefix = os.path.normpath(path_prefix)
         dir_levels = path_prefix.count('/', 1) + 1
 
+        map_url = root_url + source_map_filename
+
+        if root_url.endswith('/'):
+            root_url = root_url[0:-1] # Chrome (maybe other browsers) tacks on a trailing /
+
         tmp_source_map = 'test.map'
         command = '%s %s --source-map %s --source-map-url %s -p %d --source-map-root %s' % (
             settings.PIPELINE_UGLIFYJS_BINARY,
             ' '.join(paths),
             tmp_source_map,
-            root_url + source_map_filename,
+            map_url,
             dir_levels,
             root_url
         )
