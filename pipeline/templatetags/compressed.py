@@ -86,7 +86,7 @@ class CompressedJSNode(CompressedMixin, template.Node):
             'type': guess_type(path, 'text/javascript'),
             'url': staticfiles_storage.url(path)
         })
-        return render_to_string(template_name, context)
+        return '<script type="{type}" src="{url}" charset="utf-8"></script>'.format(**context)
 
     def render_inline(self, package, js):
         context = package.extra_context

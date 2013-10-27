@@ -113,13 +113,19 @@ class BaseFinderStorage(PipelineStorage):
             name = name[len(prefix):]
         if path == name:
             return name
-        if os.path.splitext(path)[0] == os.path.splitext(name)[0]:
+        # if os.path.splitext(path)[0] == os.path.splitext(name)[0]:
+        if path.split('.', 1)[0] == name.split('.', 1)[0]:
             return name
         return None
 
+    finder_cache = {}
+
     def find_storage(self, name):
         for finder in finders.get_finders():
-            for path, storage in finder.list([]):
+            pairs = self.finder_cache.get(finder, None)
+            if pairs is None:
+                self.finder_cache[finder] = pairs = [i for i in finder.list([])]
+            for path, storage in pairs:
                 prefix = getattr(storage, 'prefix', None)
                 matched_path = self.match_location(name, path, prefix)
                 if matched_path:

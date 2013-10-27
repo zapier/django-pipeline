@@ -15,7 +15,6 @@ from pipeline.exceptions import CompilerError
 from pipeline.storage import default_storage
 from pipeline.utils import to_class
 
-
 class Compiler(object):
     def __init__(self, storage=default_storage, verbose=False):
         self.storage = storage
@@ -25,29 +24,30 @@ class Compiler(object):
     def compilers(self):
         return [to_class(compiler) for compiler in settings.PIPELINE_COMPILERS]
 
+    def _do_compile(self, input_path, force):
+        # TODO: should profile this!
+        for compiler in self.compilers:
+            compiler = compiler(verbose=self.verbose, storage=self.storage)
+            if compiler.match_file(input_path):
+                output_path = self.output_path(input_path, compiler.output_extension)
+                infile = finders.find(input_path)
+                outfile = finders.find(output_path)
+                if outfile is None:
+                    outfile = self.output_path(infile, compiler.output_extension)
+                    outdated = True
+                else:
+                    outdated = compiler.is_outdated(input_path, output_path)
+                try:
+                    compiler.compile_file(infile, outfile, outdated=outdated, force=force)
+                except CompilerError:
+                    if not self.storage.exists(output_path) or not settings.PIPELINE:
+                        raise
+                return output_path
+        else:
+            return input_path
+
     def compile(self, paths, force=False):
-        def _compile(input_path):
-            for compiler in self.compilers:
-                compiler = compiler(verbose=self.verbose, storage=self.storage)
-                if compiler.match_file(input_path):
-                    output_path = self.output_path(input_path, compiler.output_extension)
-                    infile = finders.find(input_path)
-                    outfile = finders.find(output_path)
-                    if outfile is None:
-                        outfile = self.output_path(infile, compiler.output_extension)
-                        outdated = True
-                    else:
-                        outdated = compiler.is_outdated(input_path, output_path)
-                    try:
-                        compiler.compile_file(infile, outfile, outdated=outdated, force=force)
-                    except CompilerError:
-                        if not self.storage.exists(output_path) or not settings.PIPELINE:
-                            raise
-                    return output_path
-            else:
-                return input_path
-        with futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
-            return list(executor.map(_compile, paths))
+        return [self._do_compile(path, force) for path in paths]
 
     def output_path(self, path, extension):
         path = os.path.splitext(path)
